@@ -16,9 +16,9 @@ const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 // живой API-таск → форма экрана
 function normLive(t: any): Task {
   return {
-    id: t.id, title: t.text, type: TYPES.includes(t.domain) ? t.domain : 'Другое',
+    id: t.id, title: t.text, type: t.domain || 'Другое',   // домен PLAUD = тип/цех напрямую
     dir: t.domain || '', a: t.assignee_id || 0, st: t.status, pr: t.priority,
-    dl: t.deadline || null, aname: t.assignee_name,
+    dl: t.deadline || null, aname: t.assignee_name, origin: t.origin,
   }
 }
 
@@ -167,6 +167,7 @@ function TaskCard({ t, onDone, onPerson }: { t: Task; onDone: () => void; onPers
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, flexWrap: 'wrap' }}>
           <span style={{ flex: 1, minWidth: 140, fontSize: 14, color: T.text, lineHeight: 1.4, overflowWrap: 'break-word' }}>
+            {t.origin === 'plaud' && <Icon name="sparkles" size={12} color={T.emberLight} style={{ marginRight: 5 }} />}
             {t.pr === 'urgent' && <Icon name="flame" size={13} color={T.ember} style={{ marginRight: 5 }} />}
             {t.recId && <Icon name="repeat" size={12} color={T.green} style={{ marginRight: 5 }} />}
             {t.title}

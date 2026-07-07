@@ -22,6 +22,7 @@ export interface Task {
   order?: OrderItem[]
   recId?: number       // если экземпляр витамина
   aname?: string       // имя исполнителя из живого API (когда id не из моков)
+  origin?: string      // 'plaud' и т.п. — источник задачи
 }
 
 export interface Vit {

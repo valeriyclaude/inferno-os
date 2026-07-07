@@ -43,8 +43,15 @@ export const TYPE_COLORS: Record<string, string> = {
   'Электрика': '#d4b46a', 'Маркетинг': '#cf8a8a', 'Интерьер': '#a89e8d', 'Ремонт': '#c9a56a',
   'Административная': '#9aa58f', 'Другое': '#8f897d',
 }
-export const typeColor = (t: string) => TYPE_COLORS[t] ?? T.muted
-export const typeChipBg = (t: string) => (TYPE_COLORS[t] ?? T.muted) + '1f'
+const PALETTE = ['#d9945a', '#c97a4a', '#8fb673', '#b3a68d', '#d4b46a', '#cf8a8a', '#a89e8d', '#c9a56a', '#9aa58f', '#b79ad4']
+export const typeColor = (t: string) => {
+  if (TYPE_COLORS[t]) return TYPE_COLORS[t]
+  if (!t) return T.muted
+  if (/закуп/i.test(t)) return '#8fb673'         // «Закупки» → как «Закупка»
+  let h = 0; for (const ch of t) h = (h * 31 + ch.charCodeAt(0)) >>> 0   // детерминированный цвет по строке
+  return PALETTE[h % PALETTE.length]
+}
+export const typeChipBg = (t: string) => typeColor(t) + '1f'
 
 // Статусы задач (метка + fg/bg)
 export const STATUS: Record<string, { label: string; fg: string; bg: string }> = {
