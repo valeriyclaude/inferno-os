@@ -12,6 +12,16 @@ export function assignee(id: number) {
   return m ? { name: m.name, mono: m.mono, avaBg: m.avaBg, avaFg: m.avaFg } : UNASSIGNED
 }
 
+// Живой API: id может быть не из моков — тогда берём имя из aname.
+export function resolveAssignee(t: { a: number; aname?: string }) {
+  if (t.a) { const m = memberById(t.a); if (m) return { name: m.name, mono: m.mono, avaBg: m.avaBg, avaFg: m.avaFg } }
+  if (t.aname) {
+    const mono = t.aname.split(/\s+/).map((s) => s[0]).join('').slice(0, 2).toUpperCase() || '?'
+    return { name: t.aname, mono, avaBg: '#2b1d10', avaFg: '#d9945a' }
+  }
+  return UNASSIGNED
+}
+
 const MN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
 const WD = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 

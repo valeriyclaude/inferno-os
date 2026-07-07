@@ -1,15 +1,26 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { T } from '../theme/tokens'
 import { typeColor, typeChipBg, STATUS } from '../theme/tokens'
 import { Icon, Avatar } from '../components/Icon'
 import { tasks as MOCK, vits as VITS, TYPES, DIRS, TYPE2DIR, M } from '../data/mock'
-import { assignee, dueLabel } from '../lib/format'
+import { resolveAssignee, dueLabel } from '../lib/format'
+import { apiGet, apiPost, isLive, resolveApi } from '../lib/api'
 import { useApp } from '../state/app'
 import type { Task, Status } from '../types'
 
 type SFilter = 'active' | 'attention' | 'done' | 'vits'
+type Member = { id: number; name: string }
 const ACTIVE: Status[] = ['new', 'in_progress', 'returned']
 const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+// живой API-таск → форма экрана
+function normLive(t: any): Task {
+  return {
+    id: t.id, title: t.text, type: TYPES.includes(t.domain) ? t.domain : 'Другое',
+    dir: t.domain || '', a: t.assignee_id || 0, st: t.status, pr: t.priority,
+    dl: t.deadline || null, aname: t.assignee_name,
+  }
+}
 
 export function Tasks({ mobile }: { mobile: boolean }) {
   const { role, taskPerson, setTaskPerson, openPerson, showToast } = useApp()
@@ -20,6 +31,19 @@ export function Tasks({ mobile }: { mobile: boolean }) {
   const [type, setType] = useState<string | null>(null)
   const [sf, setSf] = useState<SFilter>('active')
   const [create, setCreate] = useState(false)
+  const [members, setMembers] = useState<Member[]>(() => M.map((m) => ({ id: m.id, name: m.name })))
+  const [live, setLive] = useState(false)
+
+  const load = useCallback(async () => { const d = await apiGet('/api/tasks'); setList(d.tasks.map(normLive)) }, [])
+  useEffect(() => {
+    if (!isLive()) return
+    ;(async () => {
+      try {
+        await resolveApi(); await load(); setLive(true)
+        try { const mm = await apiGet('/api/members'); if (mm.members?.length) setMembers(mm.members.map((m: any) => ({ id: m.id, name: m.name }))) } catch { /* ignore */ }
+      } catch { /* нет связи — остаёмся на демо-данных */ }
+    })()
+  }, [load])
 
   const overdue = (t: Task) => !!t.dl && new Date(t.dl) < new Date() && t.st !== 'done'
   const counts = useMemo(() => ({
@@ -40,11 +64,21 @@ export function Tasks({ mobile }: { mobile: boolean }) {
   }), [list, sf, type, taskPerson, q])
 
   function done(t: Task) {
+    if (live) {
+      apiPost(`/api/tasks/${t.id}/done`, {}).then(load).then(() => showToast('Готово ✓')).catch((e) => showToast('Не вышло: ' + e.message))
+      return
+    }
     const snap = list
     setList((l) => l.map((x) => (x.id === t.id ? { ...x, st: 'done' } : x)))
     showToast('Готово ✓', () => setList(snap))
   }
-  function addTask(t: Task) { setList((l) => [t, ...l]); showToast('Задача создана') }
+  function addTask(t: Task) {
+    if (live) {
+      apiPost('/api/tasks', { text: t.title, assignee_id: t.a, priority: t.pr, deadline: t.dl }).then(load).then(() => showToast('Задача создана')).catch((e) => showToast('Не вышло: ' + e.message))
+      return
+    }
+    setList((l) => [t, ...l]); showToast('Задача создана')
+  }
   function toggleVit(id: number) {
     setVits((vs) => vs.map((v) => (v.id === id ? { ...v, paused: !v.paused } : v)))
   }
@@ -109,14 +143,14 @@ export function Tasks({ mobile }: { mobile: boolean }) {
         <TaskCard key={t.id} t={t} onDone={() => done(t)} onPerson={() => t.a && openPerson(t.a)} />
       ))}
 
-      {create && <CreateDrawer mobile={mobile} onClose={() => setCreate(false)} onCreate={(t) => { addTask(t); setCreate(false) }} />}
+      {create && <CreateDrawer mobile={mobile} members={members} onClose={() => setCreate(false)} onCreate={(t) => { addTask(t); setCreate(false) }} />}
     </div>
   )
 }
 
 function TaskCard({ t, onDone, onPerson }: { t: Task; onDone: () => void; onPerson: () => void }) {
   const st = STATUS[t.st]
-  const a = assignee(t.a)
+  const a = resolveAssignee(t)
   const due = dueLabel(t.dl)
   const isOrder = !!t.order
   const canCheck = t.st !== 'done' && t.st !== 'blocked'
@@ -193,7 +227,7 @@ function VitList({ vits, onToggle, canEdit }: { vits: typeof VITS; onToggle: (id
   )
 }
 
-function CreateDrawer({ mobile, onClose, onCreate }: { mobile: boolean; onClose: () => void; onCreate: (t: Task) => void }) {
+function CreateDrawer({ mobile, members, onClose, onCreate }: { mobile: boolean; members: Member[]; onClose: () => void; onCreate: (t: Task) => void }) {
   const [step, setStep] = useState<1 | 2>(1)
   const [type, setType] = useState<string>('')
   const [dir, setDir] = useState<string>('')
@@ -260,7 +294,7 @@ function CreateDrawer({ mobile, onClose, onCreate }: { mobile: boolean; onClose:
             <Fld><Lbl>Исполнитель</Lbl>
               <select value={a} onChange={(e) => setA(+e.target.value)} style={inputSt}>
                 <option value={0}>На усмотрение рук.</option>
-                {M.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </Fld>
             <Fld><Lbl>Приоритет</Lbl>
