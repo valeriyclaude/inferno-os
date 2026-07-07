@@ -8,6 +8,10 @@ import { People } from './screens/People'
 import { Person } from './screens/Person'
 import { Orders } from './screens/Orders'
 import { Shifts } from './screens/Shifts'
+import { Projects } from './screens/Projects'
+import { Suggestions } from './screens/Suggestions'
+import { Calendar } from './screens/Calendar'
+import { Admin } from './screens/Admin'
 import { Placeholder } from './screens/Placeholder'
 import { SECTION_TITLE } from './nav'
 import { T } from './theme/tokens'
@@ -25,6 +29,10 @@ function Screen({ mobile }: { mobile: boolean }) {
     case 'person': return <Person mobile={mobile} />
     case 'orders': return <Orders mobile={mobile} />
     case 'shifts': return <Shifts mobile={mobile} />
+    case 'projects': return <Projects mobile={mobile} />
+    case 'suggs': return <Suggestions mobile={mobile} />
+    case 'calendar': return <Calendar mobile={mobile} />
+    case 'admin': return <Admin mobile={mobile} />
     default: return <Placeholder section={section} />
   }
 }
