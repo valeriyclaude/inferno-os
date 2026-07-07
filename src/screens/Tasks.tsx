@@ -79,6 +79,16 @@ export function Tasks({ mobile }: { mobile: boolean }) {
     }
     setList((l) => [t, ...l]); showToast('Задача создана')
   }
+  const [sheetTask, setSheetTask] = useState<Task | null>(null)
+  const manage = live && canCreate
+  function reassign(id: number, a: number) {
+    apiPost(`/api/tasks/${id}/reassign`, { assignee_id: a }).then(load).then(() => showToast(a ? 'Назначено' : 'Снято назначение')).catch((e) => showToast('Не вышло: ' + e.message))
+    setSheetTask(null)
+  }
+  function cancelTask(id: number) {
+    apiPost(`/api/tasks/${id}/cancel`).then(load).then(() => showToast('Задача удалена')).catch((e) => showToast('Не вышло: ' + e.message))
+    setSheetTask(null)
+  }
   function toggleVit(id: number) {
     setVits((vs) => vs.map((v) => (v.id === id ? { ...v, paused: !v.paused } : v)))
   }
@@ -140,15 +150,29 @@ export function Tasks({ mobile }: { mobile: boolean }) {
           <Icon name="checks" size={32} color="#3f382c" style={{ display: 'block', margin: '0 auto 10px' }} />Здесь пусто
         </div>
       ) : rows.map((t) => (
-        <TaskCard key={t.id} t={t} onDone={() => done(t)} onPerson={() => t.a && openPerson(t.a)} />
+        <TaskCard key={t.id} t={t} onDone={() => done(t)} onPerson={() => t.a && openPerson(t.a)} manage={manage} onMenu={() => setSheetTask(t)} />
       ))}
 
       {create && <CreateDrawer mobile={mobile} members={members} onClose={() => setCreate(false)} onCreate={(t) => { addTask(t); setCreate(false) }} />}
+
+      {sheetTask && (
+        <div onClick={() => setSheetTask(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,6,4,.6)', zIndex: 45, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, maxHeight: '80%', overflowY: 'auto', background: '#181613', borderTop: `1px solid ${T.bRaised}`, borderRadius: '18px 18px 0 0', padding: '14px 16px calc(20px + env(safe-area-inset-bottom))', animation: 'mcSheet .2s ease' }}>
+            <div style={{ fontSize: 14, color: T.text2, marginBottom: 14, lineHeight: 1.4 }}>{sheetTask.title}</div>
+            <div style={{ fontSize: 11, letterSpacing: '1px', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Назначить исполнителя</div>
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
+              {members.map((m) => <button key={m.id} onClick={() => reassign(sheetTask.id, m.id)} style={chip(sheetTask.a === m.id)}>{m.name}</button>)}
+              {sheetTask.a > 0 && <button onClick={() => reassign(sheetTask.id, 0)} style={chip(false)}>Снять</button>}
+            </div>
+            <button onClick={() => cancelTask(sheetTask.id)} style={{ width: '100%', background: '#2b1810', border: '1px solid #3a241c', color: '#e0937a', borderRadius: 11, padding: '11px 0', fontSize: 13.5 }}>Удалить задачу</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function TaskCard({ t, onDone, onPerson }: { t: Task; onDone: () => void; onPerson: () => void }) {
+function TaskCard({ t, onDone, onPerson, manage, onMenu }: { t: Task; onDone: () => void; onPerson: () => void; manage?: boolean; onMenu?: () => void }) {
   const st = STATUS[t.st]
   const a = resolveAssignee(t)
   const due = dueLabel(t.dl)
@@ -173,6 +197,7 @@ function TaskCard({ t, onDone, onPerson }: { t: Task; onDone: () => void; onPers
             {t.title}
           </span>
           <span style={{ flex: '0 0 auto', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 7, whiteSpace: 'nowrap', color: st.fg, background: st.bg }}>{st.label}</span>
+          {manage && <button onClick={onMenu} aria-label="Действия" style={{ flex: '0 0 auto', background: 'none', border: 'none', color: T.faint, padding: '0 0 0 2px', marginTop: 1 }}><Icon name="dots" size={16} /></button>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 7, color: typeColor(t.type), background: typeChipBg(t.type), whiteSpace: 'nowrap' }}>{t.type}</span>
