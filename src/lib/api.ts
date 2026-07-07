@@ -9,13 +9,18 @@ export const initData = () => tg()?.initData || ''
 export const isLive = () => !!initData()
 
 export async function resolveApi(): Promise<string> {
+  // 1) адрес из кнопки меню (?api=…) — всегда свежий, задаётся туннелем при каждом переподключении
+  const qp = new URLSearchParams(location.search).get('api')
+  if (qp && /^https:\/\//.test(qp)) { BASE = clean(qp); localStorage.setItem('inferno_api', BASE); return BASE }
+  // 2) запасной путь — общий api.txt (Pages отдаёт с CORS:*)
   try {
     const r = await fetch(POINTER + '?t=' + Date.now(), { cache: 'no-store' })
     if (r.ok) {
       const u = clean((await r.text()).trim())
       if (/^https:\/\//.test(u)) { BASE = u; localStorage.setItem('inferno_api', u); return u }
     }
-  } catch { /* оффлайн — падаем на localStorage */ }
+  } catch { /* оффлайн */ }
+  // 3) последний известный
   BASE = clean(localStorage.getItem('inferno_api') || '')
   return BASE
 }
