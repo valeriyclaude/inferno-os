@@ -6,6 +6,8 @@ import { MissionControl } from './screens/MissionControl'
 import { Tasks } from './screens/Tasks'
 import { People } from './screens/People'
 import { Person } from './screens/Person'
+import { Orders } from './screens/Orders'
+import { Shifts } from './screens/Shifts'
 import { Placeholder } from './screens/Placeholder'
 import { SECTION_TITLE } from './nav'
 import { T } from './theme/tokens'
@@ -21,6 +23,8 @@ function Screen({ mobile }: { mobile: boolean }) {
     case 'tasks': return <Tasks mobile={mobile} />
     case 'people': return <People mobile={mobile} />
     case 'person': return <Person mobile={mobile} />
+    case 'orders': return <Orders mobile={mobile} />
+    case 'shifts': return <Shifts mobile={mobile} />
     default: return <Placeholder section={section} />
   }
 }
