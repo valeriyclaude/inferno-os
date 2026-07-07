@@ -3,52 +3,63 @@ import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { MobileShell } from './components/MobileShell'
 import { MissionControl } from './screens/MissionControl'
+import { Tasks } from './screens/Tasks'
+import { People } from './screens/People'
+import { Person } from './screens/Person'
 import { Placeholder } from './screens/Placeholder'
-import { NAVSETS, SECTION_TITLE } from './nav'
+import { SECTION_TITLE } from './nav'
 import { T } from './theme/tokens'
-import type { Role, Section } from './types'
+import { AppProvider, useApp } from './state/app'
 
-const MOBILE = 700   // ниже — мобильная оболочка (нижняя навигация); выше — боковой рельс
+const MOBILE = 700
 const COLLAPSE = 1080
 
-export default function App() {
-  const [role, setRole] = useState<Role>('owner')
-  const [section, setSection] = useState<Section>('mission')
-  const [vw, setVw] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1280)
+function Screen({ mobile }: { mobile: boolean }) {
+  const { section } = useApp()
+  switch (section) {
+    case 'mission': return <MissionControl mobile={mobile} />
+    case 'tasks': return <Tasks mobile={mobile} />
+    case 'people': return <People mobile={mobile} />
+    case 'person': return <Person mobile={mobile} />
+    default: return <Placeholder section={section} />
+  }
+}
 
+function Shell() {
+  const { role, section, setRole, go } = useApp()
+  const [vw, setVw] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1280)
   useEffect(() => {
     const on = () => setVw(window.innerWidth)
     window.addEventListener('resize', on)
     return () => window.removeEventListener('resize', on)
   }, [])
-
   const mobile = vw < MOBILE
   const collapsed = vw < COLLAPSE
 
-  function changeRole(r: Role) {
-    setRole(r)
-    const keys = NAVSETS[r].map((n) => n.key)
-    const norm = section === 'person' ? 'people' : section
-    if (!keys.includes(norm as Section)) setSection(NAVSETS[r][0].key)
-  }
-
-  const screen = section === 'mission'
-    ? <MissionControl onNav={setSection} mobile={mobile} />
-    : <Placeholder section={section} />
-
   if (mobile) {
-    return <MobileShell role={role} section={section} onNav={setSection} onRole={changeRole}>{screen}</MobileShell>
+    return (
+      <MobileShell role={role} section={section} onNav={go} onRole={setRole}>
+        <Screen mobile />
+      </MobileShell>
+    )
   }
-
   return (
     <div style={{ height: '100dvh', minHeight: 600, display: 'flex', background: T.bg, color: T.text, fontSize: 14, lineHeight: 1.45, overflow: 'hidden', position: 'relative' }}>
-      <Sidebar role={role} section={section} collapsed={collapsed} onNav={setSection} onRole={changeRole} />
+      <Sidebar role={role} section={section} collapsed={collapsed} onNav={go} onRole={setRole} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <Header title={SECTION_TITLE[section]} onPalette={() => {}} />
         <main style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 clamp(16px,3vw,30px) 44px' }}>
-          {screen}
+          <Screen mobile={false} />
         </main>
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AppProvider>
+      <Shell />
+    </AppProvider>
   )
 }

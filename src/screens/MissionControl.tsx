@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { T, SERIF, loadColor } from '../theme/tokens'
 import { Icon, Avatar } from '../components/Icon'
 import { decisions as DEC, feed as FEED, M, tasks, suggs, shifts } from '../data/mock'
+import { useApp } from '../state/app'
 import type { Decision, FeedEvent, Section } from '../types'
 
 const GROUPS = ['Сейчас', 'Утро', 'Вчера']
 
-export function MissionControl({ onNav, mobile = false }: { onNav: (s: Section) => void; mobile?: boolean }) {
+export function MissionControl({ mobile = false }: { mobile?: boolean }) {
+  const { go } = useApp()
   const [decs, setDecs] = useState<Decision[]>(() => DEC.map((d) => ({ ...d })))
   const [why, setWhy] = useState<Record<number, boolean>>({})
   const [feedWhy, setFeedWhy] = useState<Record<number, boolean>>({})
@@ -159,7 +161,7 @@ export function MissionControl({ onNav, mobile = false }: { onNav: (s: Section) 
                       {e.sources?.map((s, i) => <SourceChip key={i} icon={s.icon} label={s.label} />)}
                       <span style={{ flex: 1 }} />
                       {e.actions?.map((a, i) => (
-                        <button key={i} onClick={() => a.kind === 'primary' && onNav('suggs')}
+                        <button key={i} onClick={() => a.kind === 'primary' && go('suggs')}
                           style={{
                             borderRadius: 9, padding: '6px 12px', fontSize: 12,
                             border: `1px solid ${a.kind === 'primary' ? '#4a3a26' : T.bRaised}`,
@@ -181,7 +183,7 @@ export function MissionControl({ onNav, mobile = false }: { onNav: (s: Section) 
         <div style={{ fontSize: 11, letterSpacing: '1.7px', textTransform: 'uppercase', color: T.muted, fontWeight: 600, margin: '22px 6px 10px' }}>Сегодня</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginBottom: 24 }}>
           {digest.map((dr, i) => (
-            <button key={i} onClick={() => onNav(dr.to)} data-hover
+            <button key={i} onClick={() => go(dr.to)} data-hover
               style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '9px 10px', borderRadius: 11, border: 'none', background: 'transparent', textAlign: 'left' }}>
               <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 600, width: 28, textAlign: 'center', color: dr.color, flex: '0 0 auto' }}>{dr.n}</span>
               <span style={{ flex: 1, fontSize: 12.5, color: T.text3, lineHeight: 1.3 }}>{dr.label}</span>
@@ -192,7 +194,7 @@ export function MissionControl({ onNav, mobile = false }: { onNav: (s: Section) 
         <div style={{ fontSize: 11, letterSpacing: '1.7px', textTransform: 'uppercase', color: T.muted, fontWeight: 600, margin: '0 6px 12px' }}>Команда сейчас</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '0 6px' }}>
           {team.map((p) => (
-            <div key={p.id} onClick={() => onNav('people')} style={{ cursor: 'pointer' }}>
+            <div key={p.id} onClick={() => go('people')} style={{ cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Avatar mono={p.mono} bg={p.avaBg} fg={p.avaFg} font={10} />
                 <div style={{ flex: 1, minWidth: 0 }}>
