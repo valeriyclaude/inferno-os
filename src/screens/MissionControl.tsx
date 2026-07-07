@@ -6,7 +6,7 @@ import type { Decision, FeedEvent, Section } from '../types'
 
 const GROUPS = ['Сейчас', 'Утро', 'Вчера']
 
-export function MissionControl({ onNav }: { onNav: (s: Section) => void }) {
+export function MissionControl({ onNav, mobile = false }: { onNav: (s: Section) => void; mobile?: boolean }) {
   const [decs, setDecs] = useState<Decision[]>(() => DEC.map((d) => ({ ...d })))
   const [why, setWhy] = useState<Record<number, boolean>>({})
   const [feedWhy, setFeedWhy] = useState<Record<number, boolean>>({})
@@ -52,9 +52,9 @@ export function MissionControl({ onNav }: { onNav: (s: Section) => void }) {
   const team = [...M].filter((m) => m.sysRole !== 'owner').sort((a, b) => b.load - a.load).slice(0, 4)
 
   return (
-    <div style={{ display: 'flex', gap: 26, alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: mobile ? 4 : 26, alignItems: 'flex-start' }}>
       {/* центральная лента */}
-      <div style={{ flex: 1, minWidth: 0, maxWidth: 760 }}>
+      <div style={{ flex: mobile ? '1 1 100%' : '999 1 460px', minWidth: 0, maxWidth: 760 }}>
         <div style={{ margin: '20px 0 22px' }}>
           <div style={{ fontFamily: SERIF, fontSize: 'clamp(24px,2.6vw,31px)', fontWeight: 600, color: T.text }}>Доброе утро.</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 9 }}>
@@ -132,10 +132,10 @@ export function MissionControl({ onNav }: { onNav: (s: Section) => void }) {
         </div>
         {grouped.map((g) => (
           <div key={g.label}>
-            <div style={{ fontSize: 11.5, color: T.faint, margin: '16px 0 8px 78px' }}>{g.label}</div>
+            <div style={{ fontSize: 11.5, color: T.faint, margin: `16px 0 8px ${mobile ? 50 : 78}px` }}>{g.label}</div>
             {g.events.map((e) => (
               <div key={e.id} style={{ display: 'flex', position: 'relative' }}>
-                <div style={{ width: 64, flex: '0 0 auto', textAlign: 'right', fontSize: 11.5, color: T.faint, fontVariantNumeric: 'tabular-nums', paddingTop: 14 }}>{e.time}</div>
+                <div style={{ width: mobile ? 44 : 64, flex: '0 0 auto', textAlign: 'right', fontSize: 11.5, color: T.faint, fontVariantNumeric: 'tabular-nums', paddingTop: 14 }}>{e.time}</div>
                 <div style={{ position: 'relative', flex: '0 0 auto', width: 28, display: 'flex', justifyContent: 'center' }}>
                   <div style={{ position: 'absolute', top: 0, bottom: 0, width: 1, background: T.b2 }} />
                   <div style={{ position: 'relative', width: 7, height: 7, borderRadius: '50%', background: e.tick, marginTop: 17, boxShadow: `0 0 0 4px ${T.bg}` }} />
@@ -176,8 +176,8 @@ export function MissionControl({ onNav }: { onNav: (s: Section) => void }) {
         ))}
       </div>
 
-      {/* правая колонка */}
-      <div style={{ width: 288, flex: '0 0 auto' }}>
+      {/* правая колонка (на телефоне — во всю ширину под лентой) */}
+      <div style={{ width: mobile ? '100%' : 288, flex: mobile ? '1 1 100%' : '1 1 260px' }}>
         <div style={{ fontSize: 11, letterSpacing: '1.7px', textTransform: 'uppercase', color: T.muted, fontWeight: 600, margin: '22px 6px 10px' }}>Сегодня</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginBottom: 24 }}>
           {digest.map((dr, i) => (

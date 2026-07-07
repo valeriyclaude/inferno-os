@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
+import { MobileShell } from './components/MobileShell'
 import { MissionControl } from './screens/MissionControl'
 import { Placeholder } from './screens/Placeholder'
 import { NAVSETS, SECTION_TITLE } from './nav'
 import { T } from './theme/tokens'
 import type { Role, Section } from './types'
+
+const MOBILE = 700   // ниже — мобильная оболочка (нижняя навигация); выше — боковой рельс
+const COLLAPSE = 1080
 
 export default function App() {
   const [role, setRole] = useState<Role>('owner')
@@ -18,7 +22,8 @@ export default function App() {
     return () => window.removeEventListener('resize', on)
   }, [])
 
-  const collapsed = vw < 1080
+  const mobile = vw < MOBILE
+  const collapsed = vw < COLLAPSE
 
   function changeRole(r: Role) {
     setRole(r)
@@ -27,17 +32,21 @@ export default function App() {
     if (!keys.includes(norm as Section)) setSection(NAVSETS[r][0].key)
   }
 
-  const mainPad = section === 'mission' ? '0 30px 44px' : '0 30px 44px'
+  const screen = section === 'mission'
+    ? <MissionControl onNav={setSection} mobile={mobile} />
+    : <Placeholder section={section} />
+
+  if (mobile) {
+    return <MobileShell role={role} section={section} onNav={setSection} onRole={changeRole}>{screen}</MobileShell>
+  }
 
   return (
-    <div style={{ height: '100vh', minHeight: 720, display: 'flex', background: T.bg, color: T.text, fontSize: 14, lineHeight: 1.45, overflow: 'hidden', position: 'relative' }}>
+    <div style={{ height: '100dvh', minHeight: 600, display: 'flex', background: T.bg, color: T.text, fontSize: 14, lineHeight: 1.45, overflow: 'hidden', position: 'relative' }}>
       <Sidebar role={role} section={section} collapsed={collapsed} onNav={setSection} onRole={changeRole} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <Header title={SECTION_TITLE[section]} onPalette={() => {}} />
-        <main style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: mainPad }}>
-          {section === 'mission'
-            ? <MissionControl onNav={setSection} />
-            : <Placeholder section={section} />}
+        <main style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 clamp(16px,3vw,30px) 44px' }}>
+          {screen}
         </main>
       </div>
     </div>
